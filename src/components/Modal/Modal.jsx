@@ -1,34 +1,43 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useEffect } from 'react';
 import { DivModal, Overlay } from './Modal.styled';
 
-export class Modal extends Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.handlePressESC);
-  }
-  handlePressESC = e => {
-    if (e.code === 'Escape') {
-      this.props.closeModal();
-    }
-  };
-  handleOverlayClick = e => {
+export function Modal({ largeImageURL, closeModal }) {
+  useEffect(() => {
+    const handlePressESC = e => {
+      if (e.code === 'Escape') {
+        closeModal();
+      }
+    };
+    window.addEventListener('keydown', handlePressESC);
+    return () => {
+      window.removeEventListener('keydown', handlePressESC);
+    };
+  }, [closeModal]);
+
+  // export class Modal extends Component {
+  //   componentDidMount() {
+  //     window.addEventListener('keydown', this.handlePressESC);
+  //   }
+  const handleOverlayClick = e => {
     if (e.currentTarget === e.target) {
-      this.props.closeModal();
+      closeModal();
     }
   };
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handlePressESC);
-  }
-  render() {
-    return (
-      <Overlay onClick={this.handleOverlayClick}>
-        <DivModal>
-          <img src={this.props.largeImageURL} alt="" />
-        </DivModal>
-      </Overlay>
-    );
-  }
+  //   componentWillUnmount() {
+  //     window.removeEventListener('keydown', this.handlePressESC);
+  //   }
+  //   render() {
+  return (
+    <Overlay onClick={handleOverlayClick}>
+      <DivModal>
+        <img src={largeImageURL} alt="large_photo" />
+      </DivModal>
+    </Overlay>
+  );
 }
+// }
+// }
 
 Modal.propTypes = {
   largeImageURL: PropTypes.string.isRequired,
