@@ -1,21 +1,20 @@
-import { Component } from 'react';
+import { useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import { AppMain } from './App.styled';
 
-export class App extends Component {
-  state = {
-    searchText: '',
+export function App() {
+  const [searchText, setSearchText] = useState('');
+
+  const createSearchText = searchText => {
+    setSearchText(searchText);
   };
-  createSearchText = searchText => {
-    this.setState({ searchText });
-  };
-  render() {
-    return (
-      <AppMain>
-        <Searchbar createSearchText={this.createSearchText} />
-        <ImageGallery searchText={this.state.searchText} />
-      </AppMain>
-    );
-  }
+  return (
+    <AppMain>
+      <Toaster />
+      <Searchbar createSearchText={createSearchText} />
+      <ImageGallery searchText={searchText} />
+    </AppMain>
+  );
 }

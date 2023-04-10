@@ -1,12 +1,12 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import Notiflix from 'notiflix';
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 import { getImages } from 'services/fetch';
 import { ImageGalleryList } from './ImageGallery.styled';
 import { Loader } from 'components/Loader/Loader';
 import { Modal } from 'components/Modal/Modal';
 import { LoadMoreBtn } from 'components/Button/Button';
+import { toast } from 'react-hot-toast';
 
 const STATUS = {
   IDLE: 'idle',
@@ -14,41 +14,43 @@ const STATUS = {
   RESOLVED: 'resolved',
   REJECTED: 'rejected',
 };
-export default class ImageGallery extends Component {
-  state = {
-    images: [],
-    status: STATUS.IDLE,
-    isShowModal: false,
-    largeImgURL: '',
-    currentPage: 1,
-    isLoadMore: true,
+export default function ImageGallery({ searchText }) {
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState(STATUS.IDLE);
+  const [isShowModal, setIsShowModal] = useState(false);
+  const [largeImgURL, setLargeImgURL] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadMore, setIsLoadMore] = useState(true);
+
+  const closeModal = () => {
+    setIsShowModal(false);
   };
 
-  closeModal = () => {
-    this.setState({ isShowModal: false });
-  };
-  componentDidUpdate(prevProps, prevState) {
-    const searchText = this.props.searchText.trim();
-    const { currentPage } = this.state;
+  useEffect(() => {
+    setCurrentPage(1);
+    // setImages([]);
+  }, [searchText]);
 
-    if (prevProps.searchText !== searchText && searchText) {
-      this.setState({
-        status: STATUS.PENDING,
-        currentPage: 1,
-        images: [],
-        isLoadMore: true,
-      });
-      getImages(searchText, 1)
+  useEffect(() => {
+    if (searchText) {
+      setStatus(STATUS.PENDING);
+      setIsLoadMore(true);
+      getImages(searchText, currentPage)
         .then(data => {
           if (data.totalHits === 0) {
-            this.setState({ status: STATUS.RESOLVED, isLoadMore: false });
-            return Notiflix.Notify.info(
-              'Ничего не найдено. Попробуйте изменить запрос.'
-            );
-          }
-          if (data.totalHits <= 12) {
-            this.setState({ status: STATUS.RESOLVED, isLoadMore: false });
-            Notiflix.Notify.info('<Больше картинок не найдено.>');
+            setStatus(STATUS.RESOLVED);
+            setIsLoadMore(false);
+            toast.error('Ничего не найдено. Попробуйте изменить запрос.', {
+              position: 'top-center',
+              duration: 1500,
+            });
+          } else if (Math.floor(data.totalHits / currentPage) < 12) {
+            setStatus(STATUS.RESOLVED);
+            setIsLoadMore(false);
+            toast.success('Больше картинок не найдено.', {
+              position: 'top-center',
+              duration: 1500,
+            });
           }
           if (data.status === 'error') {
             return Promise.reject(data.message);
@@ -61,102 +63,66 @@ export default class ImageGallery extends Component {
               largeImageURL,
             })
           );
-          this.setState({
-            images: imageArr,
-            status: STATUS.RESOLVED,
-          });
+          if (currentPage !== 1) {
+            setImages(prev => [...prev, ...imageArr]);
+          } else {
+            setImages(imageArr);
+          }
+          setStatus(STATUS.RESOLVED);
         })
-        .catch(error => {
-          this.setState({ error, status: STATUS.REJECTED });
+        .catch(() => {
+          setStatus(STATUS.REJECTED);
         });
     }
+  }, [searchText, currentPage]);
 
-    if (prevState.currentPage !== currentPage && currentPage !== 1) {
-      this.setState({ status: STATUS.PENDING });
-      getImages(searchText, currentPage)
-        .then(data => {
-          if (Math.floor(data.totalHits / currentPage) < 12) {
-            this.setState({ status: STATUS.RESOLVED, isLoadMore: false });
-            Notiflix.Notify.info('<Больше картинок не найдено.>');
-          }
-          if (data.totalHits === 0) {
-            return Notiflix.Notify.info(
-              'Ничего не найдено. Попробуйте изменить запрос.'
-            );
-          }
-          const imageArr = data.hits.map(
-            ({ id, tags, webformatURL, largeImageURL }) => ({
-              id,
-              tags,
-              webformatURL,
-              largeImageURL,
-            })
-          );
-          this.setState(prevState => ({
-            images: [...prevState.images, ...imageArr],
-            status: STATUS.RESOLVED,
-          }));
-        })
-        .catch(error => {
-          this.setState({ error, status: STATUS.REJECTED });
-        });
-    }
-  }
-
-  loadMoreBtn = () => {
-    this.setState(prevState => ({ currentPage: prevState.currentPage + 1 }));
+  const loadMoreBtn = () => {
+    setCurrentPage(prev => prev + 1);
   };
 
-  imageClick = e => {
+  const imageClick = e => {
     const imageId = e.target.id;
-    const { images } = this.state;
     const index = images.findIndex(
       image => Number(image.id) === Number(imageId)
     );
     const largeImage = images[index].largeImageURL;
-    this.setState({ largeImgURL: largeImage, isShowModal: true });
+    setLargeImgURL(largeImage);
+    setIsShowModal(true);
   };
 
-  render() {
-    const {
-      isShowModal,
-      largeImgURL,
-      images,
-      status,
-      currentPage,
-      isLoadMore,
-    } = this.state;
-    return (
-      <>
-        {status === STATUS.PENDING && currentPage === 1 && <Loader />}
-        {isShowModal && (
-          <Modal largeImageURL={largeImgURL} closeModal={this.closeModal} />
-        )}
-        {images.length > 0 && (
-          <>
-            <ImageGalleryList onClick={e => this.imageClick(e)}>
-              {images.map(image => {
-                return (
-                  <ImageGalleryItem
-                    webformatURL={image.webformatURL}
-                    key={image.id}
-                    id={image.id}
-                    tags={image.tags}
-                  />
-                );
-              })}
-            </ImageGalleryList>
-            {status === STATUS.RESOLVED && isLoadMore && (
-              <LoadMoreBtn onClick={this.loadMoreBtn} />
-            )}
-            {status === STATUS.PENDING && <Loader />}
-          </>
-        )}
-        {status === STATUS.REJECTED &&
-          Notiflix.Notify.failure('Что-то пошло не так ...')}
-      </>
-    );
-  }
+  return (
+    <>
+      {status === STATUS.PENDING && currentPage === 1 && <Loader />}
+      {isShowModal && (
+        <Modal largeImageURL={largeImgURL} closeModal={closeModal} />
+      )}
+      {images.length > 0 && (
+        <>
+          <ImageGalleryList onClick={e => imageClick(e)}>
+            {images.map(image => {
+              return (
+                <ImageGalleryItem
+                  webformatURL={image.webformatURL}
+                  key={image.id}
+                  id={image.id}
+                  tags={image.tags}
+                />
+              );
+            })}
+          </ImageGalleryList>
+          {status === STATUS.RESOLVED && isLoadMore && (
+            <LoadMoreBtn onClick={loadMoreBtn} />
+          )}
+          {status === STATUS.PENDING && <Loader />}
+        </>
+      )}
+      {status === STATUS.REJECTED &&
+        toast.error('Что-то пошло не так ...', {
+          position: 'top-center',
+          duration: 2000,
+        })}
+    </>
+  );
 }
 
 ImageGallery.propTypes = {
