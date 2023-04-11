@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 import { getImages } from 'services/fetch';
@@ -21,17 +21,19 @@ export default function ImageGallery({ searchText }) {
   const [largeImgURL, setLargeImgURL] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadMore, setIsLoadMore] = useState(true);
+  const prevSearchText = useRef('');
 
   const closeModal = () => {
     setIsShowModal(false);
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-    // setImages([]);
-  }, [searchText]);
+  // useEffect(() => {
+  //   setCurrentPage(1);
+  //   // setImages([]);
+  // }, [searchText]);
 
   useEffect(() => {
+    if (prevSearchText.current !== searchText) setCurrentPage(1);
     if (searchText) {
       setStatus(STATUS.PENDING);
       setIsLoadMore(true);
@@ -74,6 +76,7 @@ export default function ImageGallery({ searchText }) {
           setStatus(STATUS.REJECTED);
         });
     }
+    prevSearchText.current = searchText;
   }, [searchText, currentPage]);
 
   const loadMoreBtn = () => {
