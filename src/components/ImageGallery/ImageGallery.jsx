@@ -108,6 +108,7 @@ export default function ImageGallery({ searchText }) {
           );
           if (currentPage !== 1) {
             setImages(prev => [...prev, ...imageArr]);
+            setIsLoadMore(true);
           } else {
             setImages(imageArr);
           }
@@ -116,7 +117,7 @@ export default function ImageGallery({ searchText }) {
         .catch(() => {
           setStatus(STATUS.REJECTED);
         });
-        prevSearchText.current = searchText;
+      prevSearchText.current = searchText;
     }
   }, [searchText, currentPage]);
 
