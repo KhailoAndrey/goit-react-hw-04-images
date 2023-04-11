@@ -33,8 +33,13 @@ export default function ImageGallery({ searchText }) {
   // }, [searchText]);
 
   useEffect(() => {
-    if (prevSearchText.current !== searchText) setCurrentPage(1);
+    console.log(prevSearchText.current);
+    if (prevSearchText.current !== searchText) {
+      setCurrentPage(1);
+    }
     if (searchText) {
+      prevSearchText.current = searchText;
+
       setStatus(STATUS.PENDING);
       setIsLoadMore(true);
       getImages(searchText, currentPage)
@@ -76,7 +81,6 @@ export default function ImageGallery({ searchText }) {
           setStatus(STATUS.REJECTED);
         });
     }
-    prevSearchText.current = searchText;
   }, [searchText, currentPage]);
 
   const loadMoreBtn = () => {
