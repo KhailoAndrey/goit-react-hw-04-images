@@ -28,10 +28,11 @@ export default function ImageGallery({ searchText }) {
   };
 
   useEffect(() => {
-    toast.success('Больше картинок не найдено.', {
-      position: 'top-center',
-      duration: 1500,
-    });
+    if (searchText)
+      toast.success('Больше картинок не найдено.', {
+        position: 'top-center',
+        duration: 1500,
+      });
   }, [endOfImage]);
 
   useEffect(() => {
