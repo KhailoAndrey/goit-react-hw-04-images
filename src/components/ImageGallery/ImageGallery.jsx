@@ -35,47 +35,6 @@ export default function ImageGallery({ searchText }) {
   useEffect(() => {
     if (prevSearchText.current !== searchText) {
       setCurrentPage(1);
-      getImages(searchText, currentPage)
-        .then(data => {
-          if (data.totalHits === 0) {
-            setStatus(STATUS.RESOLVED);
-            setIsLoadMore(false);
-            toast.error('Ничего не найдено. Попробуйте изменить запрос.', {
-              position: 'top-center',
-              duration: 1500,
-            });
-          } else if (Math.floor(data.totalHits / currentPage) < 12) {
-            setStatus(STATUS.RESOLVED);
-            setIsLoadMore(false);
-            toast.success('Больше картинок не найдено.', {
-              position: 'top-center',
-              duration: 1500,
-            });
-          }
-          if (data.status === 'error') {
-            return Promise.reject(data.message);
-          }
-          const imageArr = data.hits.map(
-            ({ id, tags, webformatURL, largeImageURL }) => ({
-              id,
-              tags,
-              webformatURL,
-              largeImageURL,
-            })
-          );
-          if (currentPage !== 1) {
-            setImages(prev => [...prev, ...imageArr]);
-          } else {
-            setImages(imageArr);
-          }
-          setStatus(STATUS.RESOLVED);
-        })
-        .catch(() => {
-          setStatus(STATUS.REJECTED);
-        });
-    } else if (searchText) {
-      prevSearchText.current = searchText;
-
       setStatus(STATUS.PENDING);
       setIsLoadMore(true);
       getImages(searchText, currentPage)
@@ -116,6 +75,48 @@ export default function ImageGallery({ searchText }) {
         .catch(() => {
           setStatus(STATUS.REJECTED);
         });
+    } else if (searchText) {
+      setStatus(STATUS.PENDING);
+      setIsLoadMore(true);
+      getImages(searchText, currentPage)
+        .then(data => {
+          if (data.totalHits === 0) {
+            setStatus(STATUS.RESOLVED);
+            setIsLoadMore(false);
+            toast.error('Ничего не найдено. Попробуйте изменить запрос.', {
+              position: 'top-center',
+              duration: 1500,
+            });
+          } else if (Math.floor(data.totalHits / currentPage) < 12) {
+            setStatus(STATUS.RESOLVED);
+            setIsLoadMore(false);
+            toast.success('Больше картинок не найдено.', {
+              position: 'top-center',
+              duration: 1500,
+            });
+          }
+          if (data.status === 'error') {
+            return Promise.reject(data.message);
+          }
+          const imageArr = data.hits.map(
+            ({ id, tags, webformatURL, largeImageURL }) => ({
+              id,
+              tags,
+              webformatURL,
+              largeImageURL,
+            })
+          );
+          if (currentPage !== 1) {
+            setImages(prev => [...prev, ...imageArr]);
+          } else {
+            setImages(imageArr);
+          }
+          setStatus(STATUS.RESOLVED);
+        })
+        .catch(() => {
+          setStatus(STATUS.REJECTED);
+        });
+        prevSearchText.current = searchText;
     }
   }, [searchText, currentPage]);
 
