@@ -37,12 +37,12 @@ export default function ImageGallery({ searchText }) {
   }, [endOfImage]);
 
   useEffect(() => {
+    setCurrentPage(1);
     if (searchText) {
-      setCurrentPage(1);
-
       setStatus(STATUS.PENDING);
       setIsLoadMore(true);
-      getImages(searchText, currentPage)
+      // console.log('fetch from texteffect, page =  ', currentPage);
+      getImages(searchText, 1)
         .then(data => {
           if (data.totalHits === 0) {
             setStatus(STATUS.RESOLVED);
@@ -71,11 +71,11 @@ export default function ImageGallery({ searchText }) {
               largeImageURL,
             })
           );
-          if (currentPage !== 1) {
-            setImages(prev => [...prev, ...imageArr]);
-          } else {
-            setImages(imageArr);
-          }
+          // if (currentPage !== 1) {
+          //   setImages(prev => [...prev, ...imageArr]);
+          // } else {
+          setImages(imageArr);
+          // }
           setStatus(STATUS.RESOLVED);
         })
         .catch(() => {
@@ -85,9 +85,11 @@ export default function ImageGallery({ searchText }) {
   }, [searchText]);
 
   useEffect(() => {
+    if (currentPage === 1) return;
     if (searchText) {
       setStatus(STATUS.PENDING);
       setIsLoadMore(true);
+      // console.log('fetch from pageeffect');
       getImages(searchText, currentPage)
         .then(data => {
           if (data.totalHits === 0) {
